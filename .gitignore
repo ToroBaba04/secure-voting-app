@@ -1,0 +1,427 @@
+# GalSecVote - Système de vote électronique sécurisé
+# .gitignore - Fichiers et dossiers à exclure du contrôle de version
+
+# ==============================================================================
+# SÉCURITÉ - FICHIERS SENSIBLES (NE JAMAIS COMMITTER)
+# ==============================================================================
+
+# Variables d'environnement et configuration sensible
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+secrets.json
+config/secrets/
+
+# Clés de chiffrement et certificats
+keys/
+certificates/
+*.rsa
+*.pub
+master.key
+encryption_keys/
+
+# Fichiers de configuration avec mots de passe
+local_settings.py
+production_settings.py
+*_secret.py
+
+# Base de données avec données sensibles
+*.db
+*.sqlite3
+db.sqlite3
+db_*.sqlite3
+*.sql
+dumps/
+
+# ==============================================================================
+# PYTHON
+# ==============================================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# PyCharm
+.idea/
+
+# ==============================================================================
+# DJANGO
+# ==============================================================================
+
+# Fichiers de migration sensibles (à évaluer selon le contexte)
+# Décommentez si vous ne voulez pas versionner les migrations
+# */migrations/
+# !*/migrations/__init__.py
+
+# Fichiers statiques collectés
+staticfiles/
+static_root/
+/static/
+
+# Fichiers media uploadés
+media/
+uploads/
+
+# Logs Django
+*.log
+logs/
+log/
+
+# Cache Django
+.cache/
+cache/
+
+# Session files
+django_session/
+
+# ==============================================================================
+# ENVIRONNEMENTS VIRTUELS
+# ==============================================================================
+
+# Environnements virtuels Python
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+galsecvote_env/
+voting/
+.venv/
+
+# virtualenvwrapper
+.virtualenvs/
+
+# conda
+.conda/
+
+# ==============================================================================
+# ÉDITEURS ET IDEs
+# ==============================================================================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Atom
+.atom/
+
+# ==============================================================================
+# SYSTÈMES D'EXPLOITATION
+# ==============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==============================================================================
+# OUTILS DE DÉVELOPPEMENT
+# ==============================================================================
+
+# Node.js (si utilisé pour le frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+package-lock.json
+yarn.lock
+
+# Webpack
+webpack-stats.json
+
+# ESLint
+.eslintcache
+
+# TypeScript
+*.tsbuildinfo
+
+# ==============================================================================
+# DOCKER
+# ==============================================================================
+
+# Docker
+Dockerfile.prod
+docker-compose.override.yml
+.docker/
+
+# ==============================================================================
+# SAUVEGARDE ET ARCHIVES
+# ==============================================================================
+
+# Archives et sauvegardes
+*.zip
+*.tar.gz
+*.rar
+*.7z
+backup/
+backups/
+*.backup
+
+# ==============================================================================
+# TESTS ET QUALITÉ DE CODE
+# ==============================================================================
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Bandit (outil de sécurité Python)
+.bandit
+
+# Safety reports
+safety-report.json
+
+# Prospector
+.prospector.yaml
+
+# ==============================================================================
+# DÉPLOIEMENT
+# ==============================================================================
+
+# Gunicorn
+gunicorn.pid
+gunicorn.sock
+
+# uWSGI
+uwsgi.ini
+
+# Supervisor
+supervisord.log
+supervisord.pid
+
+# Nginx
+nginx.conf.local
+
+# SSL/TLS certificates (production)
+ssl/
+certs/
+*.crt
+*.csr
+
+# ==============================================================================
+# DOCUMENTATION
+# ==============================================================================
+
+# Documentation générée
+docs/_build/
+docs/build/
+site/
+
+# ==============================================================================
+# FICHIERS TEMPORAIRES DU PROJET
+# ==============================================================================
+
+# Fichiers temporaires de l'application
+temp/
+tmp/
+.tmp/
+
+# Fichiers de session temporaires
+session_*
+
+# Fichiers de test temporaires
+test_*.json
+test_*.xml
+test_data/
+
+# ==============================================================================
+# MONITORING ET ANALYTICS
+# ==============================================================================
+
+# Sentry
+.sentryclirc
+
+# New Relic
+newrelic.ini
+
+# ==============================================================================
+# REMARQUES IMPORTANTES
+# ==============================================================================
+
+# Ce .gitignore est configuré pour un projet Django sécurisé
+# ATTENTION :
+# 1. Ne jamais committer de clés de chiffrement ou mots de passe
+# 2. Vérifier que .env et les fichiers secrets sont bien ignorés
+# 3. Être particulièrement vigilant avec les fichiers de base de données
+# 4. Les logs peuvent contenir des informations sensibles
+# 5. Toujours faire un 'git status' avant de committer
