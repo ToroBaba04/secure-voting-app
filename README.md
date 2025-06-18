@@ -1,6 +1,5 @@
-## Membres du Groupe
-# Marieme DIAKHATE
-# Insa DIOUF
-# Baba NDIAYE
-# Jean NGUEYANOUBA
-oj
+# Membres du Groupe
+## Marieme DIAKHATE
+## Insa DIOUF
+## Baba NDIAYE
+## Jean NGUEYANOUBA
