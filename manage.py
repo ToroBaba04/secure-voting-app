@@ -6,8 +6,8 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    # Configuration par défaut pour le développement
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'galsecvote.settings.development')
+    # Configuration pour utiliser le settings principal
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'galsecvote.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
