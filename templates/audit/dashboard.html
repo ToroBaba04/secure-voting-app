@@ -1,0 +1,670 @@
+<!-- templates/audit/dashboard.html - Tableau de bord d'audit principal -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Tableau de bord d'audit et monitoring GalSecVote">
+    <title>Audit & Monitoring - GalSecVote</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar-custom {
+            background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffffff !important;
+        }
+        
+        .sidebar {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            min-height: calc(100vh - 76px);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar .nav-link {
+            color: #e2e8f0 !important;
+            border-radius: 8px;
+            margin: 2px 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: rgba(255,255,255,0.1);
+            color: #ffffff !important;
+            transform: translateX(5px);
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .metric-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .metric-icon {
+            font-size: 2.5rem;
+            opacity: 0.8;
+        }
+        
+        .security-high { color: #dc3545; }
+        .security-medium { color: #fd7e14; }
+        .security-low { color: #28a745; }
+        .security-info { color: #17a2b8; }
+        
+        .alert-card {
+            border-left: 4px solid #dc3545;
+            background: #fff5f5;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .alert-card:hover {
+            background: #fed7d7;
+            transform: translateX(5px);
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-operational { background: #28a745; }
+        .status-warning { background: #ffc107; }
+        .status-critical { background: #dc3545; }
+        .status-unknown { background: #6c757d; }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        
+        .refresh-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+            z-index: 1000;
+        }
+        
+        .period-selector {
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .event-timeline {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .event-item {
+            padding: 10px;
+            border-left: 3px solid #e2e8f0;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .event-item.critical { border-left-color: #dc3545; }
+        .event-item.warning { border-left-color: #ffc107; }
+        .event-item.info { border-left-color: #17a2b8; }
+        
+        .live-indicator {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .data-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .table th {
+            background: #f8f9fa;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .badge-severity-critical { background: #dc3545; }
+        .badge-severity-high { background: #fd7e14; }
+        .badge-severity-medium { background: #ffc107; color: #000; }
+        .badge-severity-low { background: #28a745; }
+        .badge-severity-info { background: #17a2b8; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt me-2"></i>
+                GalSecVote - Audit & Monitoring
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-1"></i>
+                        {{ user.username }}
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                            <i class="fas fa-user me-2"></i>Profil
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">
+                            <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Indicateur de rafraîchissement -->
+    <div class="refresh-indicator live-indicator" id="refreshIndicator" style="display: none;">
+        <i class="fas fa-sync-alt fa-spin me-2"></i>
+        Mise à jour en cours...
+    </div>
+    
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 p-0">
+                <div class="sidebar">
+                    <div class="p-3">
+                        <h6 class="text-white mb-3">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Tableau de bord
+                        </h6>
+                        
+                        <nav class="nav flex-column">
+                            <a class="nav-link active" href="#" data-section="overview">
+                                <i class="fas fa-chart-line me-2"></i>Vue d'ensemble
+                            </a>
+                            <a class="nav-link" href="#" data-section="security">
+                                <i class="fas fa-shield-alt me-2"></i>Sécurité
+                            </a>
+                            <a class="nav-link" href="#" data-section="audit">
+                                <i class="fas fa-list-alt me-2"></i>Journaux d'audit
+                            </a>
+                            <a class="nav-link" href="#" data-section="votes">
+                                <i class="fas fa-vote-yea me-2"></i>Événements de vote
+                            </a>
+                            <a class="nav-link" href="#" data-section="users">
+                                <i class="fas fa-users me-2"></i>Activité utilisateurs
+                            </a>
+                            <a class="nav-link" href="#" data-section="system">
+                                <i class="fas fa-server me-2"></i>Santé système
+                            </a>
+                            <a class="nav-link" href="{% url 'audit:reports' %}">
+                                <i class="fas fa-file-alt me-2"></i>Rapports
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-10 p-4">
+                <!-- Sélecteur de période -->
+                <div class="period-selector">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h4 class="mb-0">
+                                <i class="fas fa-eye me-2"></i>
+                                Monitoring en temps réel
+                                <span class="badge bg-success ms-2 live-indicator">LIVE</span>
+                            </h4>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <select class="form-select" id="periodSelect">
+                                        <option value="1h">Dernière heure</option>
+                                        <option value="24h" selected>Dernières 24h</option>
+                                        <option value="7d">7 derniers jours</option>
+                                        <option value="30d">30 derniers jours</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-outline-primary w-100" onclick="refreshData()">
+                                        <i class="fas fa-sync-alt me-1"></i>Actualiser
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section Vue d'ensemble -->
+                <div id="overview-section" class="dashboard-section">
+                    <!-- Métriques principales -->
+                    <div class="row mb-4">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card metric-card">
+                                <div class="card-body text-center">
+                                    <div class="row align-items-center">
+                                        <div class="col-8">
+                                            <h3 class="metric-value security-info" id="totalEvents">{{ metrics.total_events }}</h3>
+                                            <p class="metric-label mb-0">Événements totaux</p>
+                                        </div>
+                                        <div class="col-4">
+                                            <i class="fas fa-list-alt metric-icon security-info"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card metric-card">
+                                <div class="card-body text-center">
+                                    <div class="row align-items-center">
+                                        <div class="col-8">
+                                            <h3 class="metric-value security-high" id="securityAlerts">{{ metrics.security_alerts }}</h3>
+                                            <p class="metric-label mb-0">Alertes sécurité</p>
+                                        </div>
+                                        <div class="col-4">
+                                            <i class="fas fa-exclamation-triangle metric-icon security-high"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card metric-card">
+                                <div class="card-body text-center">
+                                    <div class="row align-items-center">
+                                        <div class="col-8">
+                                            <h3 class="metric-value security-low" id="successfulLogins">{{ metrics.successful_logins }}</h3>
+                                            <p class="metric-label mb-0">Connexions réussies</p>
+                                        </div>
+                                        <div class="col-4">
+                                            <i class="fas fa-sign-in-alt metric-icon security-low"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card metric-card">
+                                <div class="card-body text-center">
+                                    <div class="row align-items-center">
+                                        <div class="col-8">
+                                            <h3 class="metric-value security-medium" id="activeUsers">{{ metrics.active_users }}</h3>
+                                            <p class="metric-label mb-0">Utilisateurs actifs</p>
+                                        </div>
+                                        <div class="col-4">
+                                            <i class="fas fa-users metric-icon security-medium"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Graphiques -->
+                    <div class="row mb-4">
+                        <div class="col-lg-8">
+                            <div class="chart-container">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-chart-area me-2"></i>
+                                    Événements de sécurité (24h)
+                                </h5>
+                                <canvas id="securityEventsChart" height="100"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-4">
+                            <div class="chart-container">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-chart-pie me-2"></i>
+                                    Types d'événements
+                                </h5>
+                                <canvas id="eventTypesChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Alertes récentes et Statut système -->
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="card data-table">
+                                <div class="card-header bg-danger text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-bell me-2"></i>
+                                        Alertes critiques récentes
+                                    </h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="event-timeline">
+                                        {% for alert in recent_alerts %}
+                                        <div class="event-item {{ alert.severity }}">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="mb-1">{{ alert.title }}</h6>
+                                                    <p class="mb-1 text-muted small">{{ alert.message|truncatechars:80 }}</p>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        {{ alert.created_at|timesince }} ago
+                                                    </small>
+                                                </div>
+                                                <span class="badge badge-severity-{{ alert.severity }}">
+                                                    {{ alert.get_severity_display }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {% empty %}
+                                        <div class="text-center py-4 text-muted">
+                                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                            <p>Aucune alerte critique récente</p>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-6">
+                            <div class="card data-table">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-heartbeat me-2"></i>
+                                        Statut du système
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% for component in system_status %}
+                                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                        <div class="d-flex align-items-center">
+                                            <span class="status-indicator status-{{ component.status_class }}"></span>
+                                            <span>{{ component.get_component_display }}</span>
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted">{{ component.uptime_percentage }}% uptime</small>
+                                            <br>
+                                            <small class="text-muted">{{ component.response_time_ms }}ms</small>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section Sécurité -->
+                <div id="security-section" class="dashboard-section" style="display: none;">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card data-table">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-shield-alt me-2"></i>
+                                        Événements de sécurité récents
+                                    </h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Heure</th>
+                                                    <th>Type</th>
+                                                    <th>Utilisateur</th>
+                                                    <th>IP</th>
+                                                    <th>Sévérité</th>
+                                                    <th>Statut</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="securityEventsTable">
+                                                {% for event in security_events %}
+                                                <tr>
+                                                    <td>
+                                                        <small>{{ event.detected_at|date:"H:i:s" }}</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary">{{ event.get_event_type_display }}</span>
+                                                    </td>
+                                                    <td>
+                                                        {% if event.user %}
+                                                            {{ event.user.username }}
+                                                        {% else %}
+                                                            <em class="text-muted">Anonyme</em>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <code>{{ event.source_ip }}</code>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge badge-severity-{{ event.severity }}">
+                                                            {{ event.get_severity_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-{{ event.status_color }}">
+                                                            {{ event.get_status_display }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Configuration des graphiques
+        const chartColors = {
+            primary: '#007bff',
+            success: '#28a745',
+            danger: '#dc3545',
+            warning: '#ffc107',
+            info: '#17a2b8'
+        };
+        
+        // Graphique des événements de sécurité
+        const securityEventsCtx = document.getElementById('securityEventsChart').getContext('2d');
+        const securityEventsChart = new Chart(securityEventsCtx, {
+            type: 'line',
+            data: {
+                labels: {{ security_chart_labels|safe }},
+                datasets: [{
+                    label: 'Événements critiques',
+                    data: {{ security_chart_data|safe }},
+                    borderColor: chartColors.danger,
+                    backgroundColor: chartColors.danger + '20',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Graphique des types d'événements
+        const eventTypesCtx = document.getElementById('eventTypesChart').getContext('2d');
+        const eventTypesChart = new Chart(eventTypesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ event_types_labels|safe }},
+                datasets: [{
+                    data: {{ event_types_data|safe }},
+                    backgroundColor: [
+                        chartColors.danger,
+                        chartColors.warning,
+                        chartColors.info,
+                        chartColors.success,
+                        chartColors.primary
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Gestion de la navigation dans la sidebar
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') {
+                    e.preventDefault();
+                    
+                    // Retirer la classe active de tous les liens
+                    document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
+                    
+                    // Ajouter la classe active au lien cliqué
+                    this.classList.add('active');
+                    
+                    // Masquer toutes les sections
+                    document.querySelectorAll('.dashboard-section').forEach(section => {
+                        section.style.display = 'none';
+                    });
+                    
+                    // Afficher la section sélectionnée
+                    const sectionName = this.getAttribute('data-section');
+                    if (sectionName) {
+                        const section = document.getElementById(sectionName + '-section');
+                        if (section) {
+                            section.style.display = 'block';
+                        }
+                    }
+                }
+            });
+        });
+        
+        // Fonction de rafraîchissement des données
+        function refreshData() {
+            const indicator = document.getElementById('refreshIndicator');
+            indicator.style.display = 'block';
+            
+            const period = document.getElementById('periodSelect').value;
+            
+            fetch(`{% url 'audit:api_metrics' %}?period=${period}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Mettre à jour les métriques
+                    document.getElementById('totalEvents').textContent = data.total_events;
+                    document.getElementById('securityAlerts').textContent = data.security_alerts;
+                    document.getElementById('successfulLogins').textContent = data.successful_logins;
+                    document.getElementById('activeUsers').textContent = data.active_users;
+                    
+                    // Mettre à jour les graphiques
+                    securityEventsChart.data.labels = data.security_chart_labels;
+                    securityEventsChart.data.datasets[0].data = data.security_chart_data;
+                    securityEventsChart.update();
+                    
+                    eventTypesChart.data.labels = data.event_types_labels;
+                    eventTypesChart.data.datasets[0].data = data.event_types_data;
+                    eventTypesChart.update();
+                    
+                    indicator.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Erreur lors du rafraîchissement:', error);
+                    indicator.style.display = 'none';
+                });
+        }
+        
+        // Rafraîchissement automatique toutes les 30 secondes
+        setInterval(refreshData, 30000);
+        
+        // Changement de période
+        document.getElementById('periodSelect').addEventListener('change', refreshData);
+    </script>
+</body>
+</html>

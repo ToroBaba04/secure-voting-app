@@ -53,8 +53,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # Nos middlewares personnalisés seront ajoutés plus tard
-    # 'audit.middleware.AuditMiddleware',
+    
+    # Middlewares personnalisés GalSecVote (activés progressivement)
+    'audit.middleware.AuditMiddleware',
+    'audit.middleware.SecurityHeadersMiddleware',
+    # 'audit.middleware.RequestValidationMiddleware',  # À activer plus tard
+    # 'audit.middleware.SessionSecurityMiddleware',   # À activer plus tard
 ]
 
 ROOT_URLCONF = 'galsecvote.urls'

@@ -1,0 +1,773 @@
+<!-- templates/audit/reports.html - Interface de génération de rapports d'audit -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapports d'audit - GalSecVote</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .reports-header {
+            background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        
+        .report-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+            border: 1px solid #e9ecef;
+        }
+        
+        .report-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+        
+        .report-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .icon-security { background: linear-gradient(135deg, #dc3545, #fd7e14); color: white; }
+        .icon-election { background: linear-gradient(135deg, #007bff, #6610f2); color: white; }
+        .icon-activity { background: linear-gradient(135deg, #28a745, #20c997); color: white; }
+        .icon-system { background: linear-gradient(135deg, #6c757d, #495057); color: white; }
+        .icon-compliance { background: linear-gradient(135deg, #ffc107, #fd7e14); color: white; }
+        
+        .generator-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        
+        .generated-reports {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .report-item {
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .report-item:hover {
+            border-color: #007bff;
+            box-shadow: 0 2px 10px rgba(0,123,255,0.1);
+        }
+        
+        .progress-container {
+            display: none;
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .btn-generate {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 12px 25px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-generate:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+        }
+        
+        .format-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .format-option {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .format-option:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+        
+        .format-option.selected {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+        
+        .format-option input[type="radio"] {
+            display: none;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            border: none;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .stats-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stats-label {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="reports-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-0">
+                        <i class="fas fa-file-alt me-3"></i>
+                        Rapports d'audit
+                    </h1>
+                    <p class="mb-0 mt-2 opacity-75">Génération et consultation de rapports de conformité</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{% url 'audit:dashboard' %}" class="btn btn-outline-light me-2">
+                        <i class="fas fa-arrow-left me-2"></i>Tableau de bord
+                    </a>
+                    <a href="{% url 'audit:logs' %}" class="btn btn-outline-light">
+                        <i class="fas fa-list-alt me-2"></i>Journaux
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container mt-4">
+        <!-- Statistiques rapides -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card stats-card">
+                    <div class="stats-value text-primary">{{ stats.total_reports }}</div>
+                    <div class="stats-label">Rapports générés</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card stats-card">
+                    <div class="stats-value text-success">{{ stats.reports_this_month }}</div>
+                    <div class="stats-label">Ce mois-ci</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card stats-card">
+                    <div class="stats-value text-warning">{{ stats.pending_reports }}</div>
+                    <div class="stats-label">En cours</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card stats-card">
+                    <div class="stats-value text-info">{{ stats.available_templates }}</div>
+                    <div class="stats-label">Templates disponibles</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Types de rapports disponibles -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3 class="mb-4">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Générer un nouveau rapport
+                </h3>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="report-card" data-report-type="election_summary">
+                    <div class="report-icon icon-election">
+                        <i class="fas fa-vote-yea"></i>
+                    </div>
+                    <h5>Résumé d'élection</h5>
+                    <p class="text-muted mb-3">
+                        Rapport détaillé d'une élection spécifique avec statistiques de participation et intégrité.
+                    </p>
+                    <ul class="list-unstyled small mb-3">
+                        <li><i class="fas fa-check text-success me-2"></i>Statistiques de vote</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Vérification d'intégrité</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Chronologie des événements</li>
+                    </ul>
+                    <button class="btn btn-generate w-100" onclick="selectReportType('election_summary')">
+                        <i class="fas fa-play me-2"></i>Générer
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="report-card" data-report-type="user_activity">
+                    <div class="report-icon icon-activity">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h5>Activité utilisateur</h5>
+                    <p class="text-muted mb-3">
+                        Analyse de l'activité des utilisateurs, connexions et actions effectuées dans le système.
+                    </p>
+                    <ul class="list-unstyled small mb-3">
+                        <li><i class="fas fa-check text-success me-2"></i>Connexions utilisateur</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Actions par utilisateur</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Patterns d'utilisation</li>
+                    </ul>
+                    <button class="btn btn-generate w-100" onclick="selectReportType('user_activity')">
+                        <i class="fas fa-play me-2"></i>Générer
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="report-card" data-report-type="system_health">
+                    <div class="report-icon icon-system">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <h5>Santé du système</h5>
+                    <p class="text-muted mb-3">
+                        Rapport sur les performances, disponibilité et santé générale du système.
+                    </p>
+                    <ul class="list-unstyled small mb-3">
+                        <li><i class="fas fa-check text-success me-2"></i>Métriques de performance</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Taux de disponibilité</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Erreurs système</li>
+                    </ul>
+                    <button class="btn btn-generate w-100" onclick="selectReportType('system_health')">
+                        <i class="fas fa-play me-2"></i>Générer
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="report-card" data-report-type="compliance">
+                    <div class="report-icon icon-compliance">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <h5>Conformité réglementaire</h5>
+                    <p class="text-muted mb-3">
+                        Rapport de conformité aux standards de sécurité et réglementations en vigueur.
+                    </p>
+                    <ul class="list-unstyled small mb-3">
+                        <li><i class="fas fa-check text-success me-2"></i>Respect des normes</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Recommandations</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Actions correctives</li>
+                    </ul>
+                    <button class="btn btn-generate w-100" onclick="selectReportType('compliance')">
+                        <i class="fas fa-play me-2"></i>Générer
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="report-card" data-report-type="custom">
+                    <div class="report-icon" style="background: linear-gradient(135deg, #6f42c1, #e83e8c); color: white;">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h5>Rapport personnalisé</h5>
+                    <p class="text-muted mb-3">
+                        Créez un rapport sur mesure en sélectionnant les métriques et périodes de votre choix.
+                    </p>
+                    <ul class="list-unstyled small mb-3">
+                        <li><i class="fas fa-check text-success me-2"></i>Métriques personnalisées</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Période flexible</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Filtres avancés</li>
+                    </ul>
+                    <button class="btn btn-generate w-100" onclick="selectReportType('custom')">
+                        <i class="fas fa-play me-2"></i>Créer
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panneau de génération -->
+        <div class="generator-panel" id="generatorPanel" style="display: none;">
+            <h4 class="mb-4">
+                <i class="fas fa-cog me-2"></i>
+                Configuration du rapport
+            </h4>
+            
+            <form id="reportForm" method="POST" action="{% url 'audit:generate_report' %}">
+                {% csrf_token %}
+                <input type="hidden" id="reportType" name="report_type" value="">
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="reportTitle" class="form-label">Titre du rapport</label>
+                            <input type="text" class="form-control" id="reportTitle" name="title" 
+                                   placeholder="Saisissez un titre personnalisé" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Date de début</label>
+                            <input type="datetime-local" class="form-control" id="startDate" 
+                                   name="start_date" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">Date de fin</label>
+                            <input type="datetime-local" class="form-control" id="endDate" 
+                                   name="end_date" required>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Format de sortie</label>
+                            <div class="format-selector">
+                                <div class="format-option" onclick="selectFormat('html')">
+                                    <input type="radio" name="format" value="html" id="formatHtml" checked>
+                                    <div>
+                                        <i class="fas fa-globe fa-2x text-primary mb-2"></i>
+                                        <div class="fw-bold">HTML</div>
+                                        <small class="text-muted">Consultation en ligne</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="format-option" onclick="selectFormat('pdf')">
+                                    <input type="radio" name="format" value="pdf" id="formatPdf">
+                                    <div>
+                                        <i class="fas fa-file-pdf fa-2x text-danger mb-2"></i>
+                                        <div class="fw-bold">PDF</div>
+                                        <small class="text-muted">Document imprimable</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="format-option" onclick="selectFormat('excel')">
+                                    <input type="radio" name="format" value="excel" id="formatExcel">
+                                    <div>
+                                        <i class="fas fa-file-excel fa-2x text-success mb-2"></i>
+                                        <div class="fw-bold">Excel</div>
+                                        <small class="text-muted">Données analysables</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" id="customOptions" style="display: none;">
+                            <label class="form-label">Options personnalisées</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="includeCharts" name="include_charts" checked>
+                                <label class="form-check-label" for="includeCharts">
+                                    Inclure les graphiques
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="includeDetails" name="include_details" checked>
+                                <label class="form-check-label" for="includeDetails">
+                                    Inclure les détails techniques
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confidential" name="confidential">
+                                <label class="form-check-label" for="confidential">
+                                    Marquer comme confidentiel
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row" id="electionOptions" style="display: none;">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="electionSelect" class="form-label">Sélectionner une élection</label>
+                            <select class="form-select" id="electionSelect" name="election_id">
+                                <option value="">Choisir une élection...</option>
+                                {% for election in available_elections %}
+                                <option value="{{ election.id }}">{{ election.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <button type="button" class="btn btn-outline-secondary" onclick="cancelReport()">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </button>
+                    
+                    <button type="submit" class="btn btn-generate">
+                        <i class="fas fa-cog fa-spin me-2" id="generateIcon"></i>
+                        <span id="generateText">Générer le rapport</span>
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Barre de progression -->
+            <div class="progress-container" id="progressContainer">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold">Génération en cours...</span>
+                    <span id="progressPercentage">0%</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         id="progressBar" style="width: 0%"></div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted" id="progressStatus">Initialisation...</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rapports générés récemment -->
+        <div class="generated-reports">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Rapports récents
+                </h4>
+                <a href="{% url 'audit:all_reports' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-archive me-2"></i>Voir tous les rapports
+                </a>
+            </div>
+            
+            {% for report in recent_reports %}
+            <div class="report-item">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h6 class="mb-1">{{ report.title }}</h6>
+                        <p class="mb-1 text-muted small">{{ report.template.get_report_type_display }}</p>
+                        <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i>
+                            Généré le {{ report.generated_at|date:"d/m/Y à H:i" }}
+                            par {{ report.generated_by.username }}
+                        </small>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            {% if report.format == 'pdf' %}
+                                <i class="fas fa-file-pdf text-danger me-2"></i>
+                            {% elif report.format == 'excel' %}
+                                <i class="fas fa-file-excel text-success me-2"></i>
+                            {% else %}
+                                <i class="fas fa-globe text-primary me-2"></i>
+                            {% endif %}
+                            <div>
+                                <div class="small fw-bold">{{ report.format|upper }}</div>
+                                <div class="small text-muted">{{ report.file_size_bytes|filesizeformat }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'audit:view_report' report.id %}" 
+                               class="btn btn-outline-primary" title="Consulter">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'audit:download_report' report.id %}" 
+                               class="btn btn-outline-success" title="Télécharger">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% if user == report.generated_by or user.is_staff %}
+                            <button class="btn btn-outline-danger" 
+                                    onclick="deleteReport('{{ report.id }}')" title="Supprimer">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5">
+                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aucun rapport généré récemment</h5>
+                <p class="text-muted">Commencez par générer votre premier rapport en sélectionnant un type ci-dessus.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Modal de confirmation de suppression -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                        Confirmer la suppression
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Êtes-vous sûr de vouloir supprimer ce rapport ?</p>
+                    <p class="text-danger small">
+                        <i class="fas fa-warning me-1"></i>
+                        Cette action est irréversible.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">
+                        <i class="fas fa-trash me-2"></i>Supprimer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let selectedReportType = '';
+        let reportToDelete = '';
+        
+        // Configuration par défaut des dates (derniers 30 jours)
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+            
+            document.getElementById('endDate').value = now.toISOString().slice(0, 16);
+            document.getElementById('startDate').value = thirtyDaysAgo.toISOString().slice(0, 16);
+            
+            // Sélectionner le format HTML par défaut
+            selectFormat('html');
+        });
+        
+        function selectReportType(type) {
+            selectedReportType = type;
+            document.getElementById('reportType').value = type;
+            
+            // Afficher le panneau de configuration
+            document.getElementById('generatorPanel').style.display = 'block';
+            
+            // Scroll vers le panneau
+            document.getElementById('generatorPanel').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+            
+            // Configurer le titre par défaut
+            const titles = {
+                'security_audit': 'Rapport d\'audit de sécurité',
+                'election_summary': 'Résumé d\'élection',
+                'user_activity': 'Rapport d\'activité utilisateur',
+                'system_health': 'Rapport de santé système',
+                'compliance': 'Rapport de conformité',
+                'custom': 'Rapport personnalisé'
+            };
+            
+            document.getElementById('reportTitle').value = titles[type] + ' - ' + 
+                new Date().toLocaleDateString('fr-FR');
+            
+            // Afficher/masquer les options spécifiques
+            const electionOptions = document.getElementById('electionOptions');
+            const customOptions = document.getElementById('customOptions');
+            
+            if (type === 'election_summary') {
+                electionOptions.style.display = 'block';
+                document.getElementById('electionSelect').required = true;
+            } else {
+                electionOptions.style.display = 'none';
+                document.getElementById('electionSelect').required = false;
+            }
+            
+            if (type === 'custom') {
+                customOptions.style.display = 'block';
+            } else {
+                customOptions.style.display = 'none';
+            }
+        }
+        
+        function selectFormat(format) {
+            // Retirer la sélection de tous les formats
+            document.querySelectorAll('.format-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Sélectionner le nouveau format
+            document.querySelector(`#format${format.charAt(0).toUpperCase() + format.slice(1)}`).checked = true;
+            document.querySelector(`#format${format.charAt(0).toUpperCase() + format.slice(1)}`).closest('.format-option').classList.add('selected');
+        }
+        
+        function cancelReport() {
+            document.getElementById('generatorPanel').style.display = 'none';
+            selectedReportType = '';
+        }
+        
+        // Gestion du formulaire de génération
+        document.getElementById('reportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Afficher la progression
+            const progressContainer = document.getElementById('progressContainer');
+            const generateIcon = document.getElementById('generateIcon');
+            const generateText = document.getElementById('generateText');
+            
+            progressContainer.style.display = 'block';
+            generateIcon.classList.remove('fa-cog');
+            generateIcon.classList.add('fa-spinner');
+            generateText.textContent = 'Génération en cours...';
+            
+            // Simuler la progression
+            simulateProgress();
+            
+            // Soumettre le formulaire
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Rediriger vers le rapport généré
+                    window.location.href = data.report_url;
+                } else {
+                    throw new Error(data.error || 'Erreur lors de la génération');
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la génération du rapport: ' + error.message);
+                
+                // Réinitialiser l'interface
+                progressContainer.style.display = 'none';
+                generateIcon.classList.remove('fa-spinner');
+                generateIcon.classList.add('fa-cog');
+                generateText.textContent = 'Générer le rapport';
+            });
+        });
+        
+        function simulateProgress() {
+            const progressBar = document.getElementById('progressBar');
+            const progressPercentage = document.getElementById('progressPercentage');
+            const progressStatus = document.getElementById('progressStatus');
+            
+            const steps = [
+                { percent: 20, status: 'Collecte des données...' },
+                { percent: 40, status: 'Analyse des événements...' },
+                { percent: 60, status: 'Génération des graphiques...' },
+                { percent: 80, status: 'Formatage du rapport...' },
+                { percent: 100, status: 'Finalisation...' }
+            ];
+            
+            let currentStep = 0;
+            
+            const interval = setInterval(() => {
+                if (currentStep < steps.length) {
+                    const step = steps[currentStep];
+                    progressBar.style.width = step.percent + '%';
+                    progressPercentage.textContent = step.percent + '%';
+                    progressStatus.textContent = step.status;
+                    currentStep++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 1000);
+        }
+        
+        function deleteReport(reportId) {
+            reportToDelete = reportId;
+            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            modal.show();
+        }
+        
+        document.getElementById('confirmDelete').addEventListener('click', function() {
+            if (reportToDelete) {
+                fetch(`{% url 'audit:delete_report' 0 %}`.replace('0', reportToDelete), {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Erreur lors de la suppression');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    alert('Erreur lors de la suppression');
+                });
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+                modal.hide();
+            }
+        });
+        
+        // Animation des cartes de rapport
+        document.querySelectorAll('.report-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-10px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>
+                <div class="report-card" data-report-type="security_audit">
+                    <div class="report-icon icon-security">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h5>Audit de sécurité</h5>
+                    <p class="text-muted mb-3">
+                        Rapport complet des événements de sécurité, tentatives d'intrusion et vulnérabilités détectées.
+                    </p>
+                    <ul class="list-unstyled small mb-3">
+                        <li><i class="fas fa-check text-success me-2"></i>Événements de sécurité</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Tentatives d'authentification</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Anomalies détectées</li>
+                    </ul>
+                    <button class="btn btn-generate w-100" onclick="selectReportType('security_audit')">
+                        <i class="fas fa-play me-2"></i>Générer
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">

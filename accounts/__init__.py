@@ -1,23 +1,7 @@
+# accounts/__init__.py - Module d'authentification GalSecVote
 """
-Utilitaires pour le module accounts de GalSecVote
+Module d'authentification et gestion des utilisateurs pour GalSecVote
+Implémentation de l'authentification forte 2FA
 """
 
-from .otp_generator import OTPGenerator
-from .password_validators import (
-    CustomPasswordValidator,
-    PasswordHistoryValidator,
-    CommonPasswordValidator,
-    PasswordStrengthValidator,
-    test_password_strength,
-    generate_password_suggestions
-)
-
-__all__ = [
-    'OTPGenerator',
-    'CustomPasswordValidator',
-    'PasswordHistoryValidator', 
-    'CommonPasswordValidator',
-    'PasswordStrengthValidator',
-    'test_password_strength',
-    'generate_password_suggestions'
-]
+default_app_config = 'accounts.apps.AccountsConfig'

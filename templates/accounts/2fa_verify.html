@@ -1,0 +1,372 @@
+<!-- templates/accounts/2fa_verify.html - Vérification du code 2FA -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Vérification de l'authentification à deux facteurs">
+    <title>Vérification 2FA - GalSecVote</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .verify-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .verify-header {
+            background: linear-gradient(45deg, #fd7e14, #ffc107);
+            color: white;
+            padding: 2rem;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+            margin: -2rem -2rem 2rem -2rem;
+        }
+        
+        .phone-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+        
+        .code-input {
+            font-size: 3rem;
+            text-align: center;
+            letter-spacing: 1rem;
+            font-weight: bold;
+            border-radius: 15px;
+            border: 3px solid #dee2e6;
+            padding: 1rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .code-input:focus {
+            border-color: #fd7e14;
+            box-shadow: 0 0 0 0.2rem rgba(253, 126, 20, 0.25);
+        }
+        
+        .btn-verify {
+            background: linear-gradient(45deg, #fd7e14, #ffc107);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 2rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn-verify:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(253, 126, 20, 0.3);
+        }
+        
+        .backup-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .countdown {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fd7e14;
+        }
+        
+        .help-text {
+            background: #e7f3ff;
+            border-left: 4px solid #0066cc;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+        }
+        
+        .backup-input {
+            display: none;
+        }
+        
+        .backup-input.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .security-tips {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="verify-card">
+                    <!-- Header -->
+                    <div class="verify-header">
+                        <i class="fas fa-mobile-alt phone-icon"></i>
+                        <h2 class="fw-bold mb-2">Authentification requise</h2>
+                        <p class="mb-0">Entrez le code de votre application d'authentification</p>
+                    </div>
+                    
+                    <div class="p-4">
+                        <!-- Messages -->
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-{% if message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'success' %}check-circle{% else %}info-circle{% endif %} me-2"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <!-- Informations utilisateur -->
+                        <div class="text-center mb-4">
+                            <div class="d-flex align-items-center justify-content-center mb-3">
+                                <i class="fas fa-user-circle fs-3 text-muted me-2"></i>
+                                <div>
+                                    <h5 class="mb-0">{{ user.username }}</h5>
+                                    <small class="text-muted">{{ user.email }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Formulaire principal -->
+                        <form method="post" id="verifyForm" novalidate>
+                            {% csrf_token %}
+                            
+                            <div class="mb-4">
+                                <label for="{{ form.code.id_for_label }}" class="form-label fw-semibold text-center d-block">
+                                    <i class="fas fa-key me-2"></i>Code d'authentification
+                                </label>
+                                <input type="text" 
+                                       class="form-control code-input" 
+                                       id="{{ form.code.id_for_label }}"
+                                       name="{{ form.code.name }}"
+                                       maxlength="6" 
+                                       pattern="[0-9]{6}"
+                                       inputmode="numeric"
+                                       placeholder="000000"
+                                       autocomplete="one-time-code"
+                                       autofocus
+                                       required>
+                                <div class="form-text text-center">
+                                    {{ form.code.help_text }}
+                                </div>
+                                {% if form.code.errors %}
+                                    <div class="text-danger text-center mt-2">
+                                        {% for error in form.code.errors %}
+                                            <div><i class="fas fa-exclamation-triangle me-1"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Token de récupération (caché par défaut) -->
+                            <div class="backup-input" id="backupSection">
+                                <div class="mb-3">
+                                    <label for="{{ form.backup_token.id_for_label }}" class="form-label fw-semibold">
+                                        <i class="fas fa-life-ring me-2"></i>Token de récupération
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="{{ form.backup_token.id_for_label }}"
+                                           name="{{ form.backup_token.name }}"
+                                           placeholder="Entrez votre token de récupération"
+                                           autocomplete="off">
+                                    <div class="form-text">
+                                        Utilisez un de vos tokens de récupération si vous n'avez pas accès à votre application d'authentification.
+                                    </div>
+                                    {% if form.backup_token.errors %}
+                                        <div class="text-danger mt-2">
+                                            {% for error in form.backup_token.errors %}
+                                                <div><i class="fas fa-exclamation-triangle me-1"></i>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Erreurs générales -->
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger">
+                                    {% for error in form.non_field_errors %}
+                                        <div><i class="fas fa-exclamation-triangle me-2"></i>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Bouton de vérification -->
+                            <div class="text-center mb-3">
+                                <button type="submit" class="btn btn-verify btn-warning btn-lg w-100">
+                                    <i class="fas fa-unlock me-2"></i>Vérifier et se connecter
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <!-- Options de récupération -->
+                        <div class="backup-section">
+                            <h6 class="fw-bold mb-3">
+                                <i class="fas fa-question-circle me-2"></i>Problème d'accès ?
+                            </h6>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleBackupSection()">
+                                    <i class="fas fa-life-ring me-2"></i>Utiliser un token de récupération
+                                </button>
+                                <a href="{% url 'accounts:login' %}" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-arrow-left me-2"></i>Retour à la connexion
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Conseils de sécurité -->
+                        <div class="security-tips">
+                            <h6 class="fw-bold text-warning mb-2">
+                                <i class="fas fa-shield-alt me-2"></i>Conseils de sécurité
+                            </h6>
+                            <ul class="mb-0 small">
+                                <li>Le code change toutes les 30 secondes</li>
+                                <li>N'partagez jamais vos codes d'authentification</li>
+                                <li>Si vous avez perdu votre téléphone, contactez l'administrateur</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Minuteur visuel -->
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                Session expire dans : <span id="countdown" class="countdown">5:00</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="text-center mt-4">
+                    <small class="text-light">
+                        <i class="fas fa-lock me-2"></i>
+                        Connexion sécurisée • Vos données sont protégées
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Auto-format et validation du code
+        document.getElementById('id_code').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 6) {
+                value = value.substring(0, 6);
+            }
+            e.target.value = value;
+            
+            // Auto-submit quand 6 chiffres sont saisis
+            if (value.length === 6) {
+                setTimeout(() => {
+                    document.getElementById('verifyForm').submit();
+                }, 500);
+            }
+        });
+        
+        // Toggle backup token section
+        function toggleBackupSection() {
+            const backupSection = document.getElementById('backupSection');
+            const codeInput = document.getElementById('id_code');
+            const backupInput = document.getElementById('id_backup_token');
+            
+            if (backupSection.classList.contains('show')) {
+                backupSection.classList.remove('show');
+                codeInput.required = true;
+                codeInput.focus();
+                backupInput.value = '';
+            } else {
+                backupSection.classList.add('show');
+                codeInput.required = false;
+                backupInput.focus();
+            }
+        }
+        
+        // Countdown timer (5 minutes session)
+        let timeLeft = 300; // 5 minutes en secondes
+        const countdownElement = document.getElementById('countdown');
+        
+        function updateCountdown() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            countdownElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) {
+                alert('Session expirée. Vous allez être redirigé vers la page de connexion.');
+                window.location.href = '{% url "accounts:login" %}';
+                return;
+            }
+            
+            // Changer la couleur quand il reste moins d'une minute
+            if (timeLeft <= 60) {
+                countdownElement.style.color = '#dc3545';
+                countdownElement.parentElement.classList.add('text-danger');
+            }
+            
+            timeLeft--;
+        }
+        
+        // Démarrer le countdown
+        setInterval(updateCountdown, 1000);
+        updateCountdown(); // Affichage initial
+        
+        // Auto-dismiss alerts
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+        
+        // Empêcher le submit si les deux champs sont remplis
+        document.getElementById('verifyForm').addEventListener('submit', function(e) {
+            const code = document.getElementById('id_code').value;
+            const backupToken = document.getElementById('id_backup_token').value;
+            
+            if (code && backupToken) {
+                e.preventDefault();
+                alert('Veuillez utiliser soit le code d\'authentification, soit le token de récupération, pas les deux.');
+                return false;
+            }
+            
+            if (!code && !backupToken) {
+                e.preventDefault();
+                alert('Veuillez entrer un code d\'authentification ou un token de récupération.');
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

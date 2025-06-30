@@ -1,0 +1,485 @@
+<!-- templates/audit/logs.html - Interface de consultation des logs d'audit -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journaux d'audit - GalSecVote</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .audit-header {
+            background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        
+        .filter-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .log-table-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .severity-critical { color: #dc3545; }
+        .severity-high { color: #fd7e14; }
+        .severity-medium { color: #ffc107; }
+        .severity-low { color: #28a745; }
+        
+        .action-btn {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+        
+        .log-details {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .export-section {
+            border-top: 1px solid #dee2e6;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        
+        .search-highlight {
+            background-color: yellow;
+            padding: 1px 3px;
+            border-radius: 3px;
+        }
+        
+        .log-entry-row:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+        
+        .collapse-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .collapse-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="audit-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="mb-0">
+                        <i class="fas fa-list-alt me-3"></i>
+                        Journaux d'audit
+                    </h1>
+                    <p class="mb-0 mt-2 opacity-75">Consultation et analyse des événements système</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{% url 'audit:dashboard' %}" class="btn btn-outline-light">
+                        <i class="fas fa-arrow-left me-2"></i>Retour au tableau de bord
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container mt-4">
+        <!-- Panneau de filtres -->
+        <div class="filter-panel">
+            <form method="GET" id="filterForm">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="dateStart" class="form-label">Date de début</label>
+                        <input type="datetime-local" class="form-control" id="dateStart" name="date_start" 
+                               value="{{ filters.date_start }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="dateEnd" class="form-label">Date de fin</label>
+                        <input type="datetime-local" class="form-control" id="dateEnd" name="date_end" 
+                               value="{{ filters.date_end }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="severity" class="form-label">Sévérité</label>
+                        <select class="form-select" id="severity" name="severity">
+                            <option value="">Toutes</option>
+                            <option value="critical" {% if filters.severity == 'critical' %}selected{% endif %}>Critique</option>
+                            <option value="high" {% if filters.severity == 'high' %}selected{% endif %}>Élevé</option>
+                            <option value="medium" {% if filters.severity == 'medium' %}selected{% endif %}>Moyen</option>
+                            <option value="low" {% if filters.severity == 'low' %}selected{% endif %}>Faible</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="category" class="form-label">Catégorie</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="">Toutes</option>
+                            {% for value, label in category_choices %}
+                            <option value="{{ value }}" {% if filters.category == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="user" class="form-label">Utilisateur</label>
+                        <input type="text" class="form-control" id="user" name="user" 
+                               placeholder="Nom d'utilisateur" value="{{ filters.user }}">
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label for="search" class="form-label">Recherche</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               placeholder="Rechercher dans les détails..." value="{{ filters.search }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="action" class="form-label">Action</label>
+                        <input type="text" class="form-control" id="action" name="action" 
+                               placeholder="Type d'action" value="{{ filters.action }}">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-search me-2"></i>Filtrer
+                        </button>
+                        <a href="{% url 'audit:logs' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Résultats -->
+        <div class="log-table-container">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2"></i>
+                    Résultats ({{ audit_logs.count }} événements)
+                </h5>
+                
+                <!-- Section d'export -->
+                <div class="export-section">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                data-bs-toggle="dropdown">
+                            <i class="fas fa-download me-1"></i>Exporter
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'audit:export_logs' %}?{{ request.GET.urlencode }}&format=csv">
+                                    <i class="fas fa-file-csv me-2"></i>CSV
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'audit:export_logs' %}?{{ request.GET.urlencode }}&format=json">
+                                    <i class="fas fa-file-code me-2"></i>JSON
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'audit:export_logs' %}?{{ request.GET.urlencode }}&format=excel">
+                                    <i class="fas fa-file-excel me-2"></i>Excel
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Table des logs -->
+            <div class="table-responsive">
+                <table class="table table-hover" id="auditTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="5%"></th>
+                            <th width="15%">Horodatage</th>
+                            <th width="15%">Utilisateur</th>
+                            <th width="15%">Action</th>
+                            <th width="15%">Ressource</th>
+                            <th width="10%">Résultat</th>
+                            <th width="10%">Sévérité</th>
+                            <th width="10%">IP</th>
+                            <th width="5%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in audit_logs %}
+                        <tr class="log-entry-row" data-bs-toggle="collapse" 
+                            data-bs-target="#details-{{ log.id }}" 
+                            aria-expanded="false">
+                            <td>
+                                <i class="fas fa-chevron-down collapse-icon collapsed"></i>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ log.timestamp|date:"d/m/Y" }}</div>
+                                <small class="text-muted">{{ log.timestamp|time:"H:i:s" }}</small>
+                            </td>
+                            <td>
+                                {% if log.user %}
+                                    <span class="badge bg-info">{{ log.username }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Système</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <code class="small">{{ log.action }}</code>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark">{{ log.resource }}</span>
+                            </td>
+                            <td>
+                                {% if log.result == 'success' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>Succès
+                                    </span>
+                                {% elif log.result == 'failure' %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times me-1"></i>Échec
+                                    </span>
+                                {% elif log.result == 'warning' %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Avertissement
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ log.result }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="severity-{{ log.severity }}">
+                                    <i class="fas fa-circle me-1"></i>
+                                    {{ log.get_severity_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <code class="small">{{ log.user_ip }}</code>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary action-btn" 
+                                        onclick="showLogDetails('{{ log.id }}')" 
+                                        title="Voir les détails">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        
+                        <!-- Ligne de détails pliable -->
+                        <tr class="collapse" id="details-{{ log.id }}">
+                            <td colspan="9">
+                                <div class="log-details">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6><i class="fas fa-info-circle me-2"></i>Informations détaillées</h6>
+                                            <ul class="list-unstyled mb-0">
+                                                <li><strong>ID de session:</strong> <code>{{ log.session_key|default:"N/A" }}</code></li>
+                                                <li><strong>User Agent:</strong> {{ log.user_agent|truncatechars:50 }}</li>
+                                                <li><strong>Catégorie:</strong> {{ log.get_category_display }}</li>
+                                                <li><strong>Checksum:</strong> <code>{{ log.checksum|slice:":16" }}...</code></li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6><i class="fas fa-cog me-2"></i>Détails techniques</h6>
+                                            {% if log.details %}
+                                            <pre class="small bg-light p-2 rounded">{{ log.details|pprint }}</pre>
+                                            {% else %}
+                                            <p class="text-muted small">Aucun détail technique disponible</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if log.old_values or log.new_values %}
+                                    <div class="row mt-3">
+                                        {% if log.old_values %}
+                                        <div class="col-md-6">
+                                            <h6><i class="fas fa-history me-2"></i>Anciennes valeurs</h6>
+                                            <pre class="small bg-light p-2 rounded">{{ log.old_values|pprint }}</pre>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if log.new_values %}
+                                        <div class="col-md-6">
+                                            <h6><i class="fas fa-edit me-2"></i>Nouvelles valeurs</h6>
+                                            <pre class="small bg-light p-2 rounded">{{ log.new_values|pprint }}</pre>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if log.error_message %}
+                                    <div class="row mt-3">
+                                        <div class="col-12">
+                                            <h6 class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Message d'erreur</h6>
+                                            <div class="alert alert-danger small mb-0">
+                                                {{ log.error_message }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">Aucun événement d'audit trouvé avec les critères sélectionnés.</p>
+                                <a href="{% url 'audit:logs' %}" class="btn btn-primary">
+                                    <i class="fas fa-refresh me-2"></i>Réinitialiser les filtres
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Navigation des pages">
+                <ul class="pagination justify-content-center mt-4">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{{ request.GET.urlencode }}&page=1">Première</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.previous_page_number }}">Précédente</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.next_page_number }}">Suivante</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.paginator.num_pages }}">Dernière</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Modal pour les détails -->
+    <div class="modal fade" id="logDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Détails de l'événement d'audit
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="logDetailsContent">
+                    <!-- Contenu chargé dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    
+    <script>
+        // Initialisation de DataTables pour la recherche et le tri côté client
+        $(document).ready(function() {
+            $('#auditTable').DataTable({
+                "paging": false,
+                "searching": false,
+                "ordering": true,
+                "info": false,
+                "autoWidth": false,
+                "columnDefs": [
+                    { "orderable": false, "targets": [0, 8] }
+                ],
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json"
+                }
+            });
+        });
+        
+        // Gestion de l'icône de collapse
+        document.addEventListener('DOMContentLoaded', function() {
+            const collapseElements = document.querySelectorAll('[data-bs-toggle="collapse"]');
+            
+            collapseElements.forEach(element => {
+                element.addEventListener('click', function() {
+                    const icon = this.querySelector('.collapse-icon');
+                    if (icon) {
+                        icon.classList.toggle('collapsed');
+                    }
+                });
+            });
+        });
+        
+        // Fonction pour afficher les détails d'un log dans une modal
+        function showLogDetails(logId) {
+            fetch(`{% url 'audit:log_details' 0 %}`.replace('0', logId))
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('logDetailsContent').innerHTML = data.html;
+                    const modal = new bootstrap.Modal(document.getElementById('logDetailsModal'));
+                    modal.show();
+                })
+                .catch(error => {
+                    console.error('Erreur lors du chargement des détails:', error);
+                    alert('Erreur lors du chargement des détails');
+                });
+        }
+        
+        // Auto-submit du formulaire lors du changement de sélecteurs
+        document.getElementById('severity').addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+        
+        document.getElementById('category').addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+        
+        // Raccourcis clavier
+        document.addEventListener('keydown', function(e) {
+            // Ctrl + F pour focus sur la recherche
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                document.getElementById('search').focus();
+            }
+            
+            // Échap pour réinitialiser les filtres
+            if (e.key === 'Escape') {
+                window.location.href = '{% url "audit:logs" %}';
+            }
+        });
+    </script>
+</body>
+</html>
