@@ -1,0 +1,447 @@
+<!-- templates/accounts/register.html - Template d'inscription sécurisée -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Inscription sécurisée à GalSecVote">
+    <title>Inscription - GalSecVote</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .register-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .brand-logo {
+            color: #667eea;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .security-badge {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-register {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn-register:hover {
+            background: linear-gradient(45deg, #5a6fd8, #6a3d91);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .password-strength {
+            height: 4px;
+            margin-top: 5px;
+            border-radius: 2px;
+            background: #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .password-strength.weak { width: 25%; background: #dc3545; }
+        .password-strength.fair { width: 50%; background: #ffc107; }
+        .password-strength.good { width: 75%; background: #fd7e14; }
+        .password-strength.strong { width: 100%; background: #28a745; }
+        
+        .password-requirements {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        
+        .requirement {
+            color: #6c757d;
+            transition: color 0.3s ease;
+        }
+        
+        .requirement.met {
+            color: #28a745;
+        }
+        
+        .security-info {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            border-radius: 0 10px 10px 0;
+            margin-top: 1.5rem;
+        }
+        
+        .input-group-text {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid #dee2e6;
+            color: #667eea;
+        }
+        
+        .form-control {
+            border-left: none;
+        }
+        
+        .form-control:focus + .input-group-text,
+        .input-group-text:focus + .form-control {
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="register-card p-4">
+                    <!-- En-tête -->
+                    <div class="text-center mb-4">
+                        <div class="brand-logo">
+                            <i class="fas fa-vote-yea"></i>
+                        </div>
+                        <h2 class="h4 fw-bold text-dark mb-2">GalSecVote</h2>
+                        <div class="security-badge">
+                            <i class="fas fa-shield-alt me-2"></i>Inscription Sécurisée
+                        </div>
+                        <p class="text-muted">Créez votre compte de vote électronique</p>
+                    </div>
+                    
+                    <!-- Messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {% if message.tags == 'error' %}
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                {% elif message.tags == 'success' %}
+                                    <i class="fas fa-check-circle me-2"></i>
+                                {% elif message.tags == 'warning' %}
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle me-2"></i>
+                                {% endif %}
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <!-- Formulaire d'inscription -->
+                    <form method="post" id="registerForm">
+                        {% csrf_token %}
+                        
+                        <!-- Nom d'utilisateur -->
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-user me-2"></i>{{ form.username.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-at"></i>
+                                </span>
+                                {{ form.username }}
+                            </div>
+                            {% if form.username.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.username.errors %}
+                                        <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-envelope me-2"></i>{{ form.email.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-mail-bulk"></i>
+                                </span>
+                                {{ form.email }}
+                            </div>
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.email.errors %}
+                                        <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Prénom -->
+                        {% if form.first_name %}
+                        <div class="mb-3">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-user-edit me-2"></i>{{ form.first_name.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-signature"></i>
+                                </span>
+                                {{ form.first_name }}
+                            </div>
+                            {% if form.first_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.first_name.errors %}
+                                        <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Nom -->
+                        {% if form.last_name %}
+                        <div class="mb-3">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-user-tag me-2"></i>{{ form.last_name.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-id-card"></i>
+                                </span>
+                                {{ form.last_name }}
+                            </div>
+                            {% if form.last_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.last_name.errors %}
+                                        <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Mot de passe -->
+                        <div class="mb-3">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-lock me-2"></i>{{ form.password1.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-key"></i>
+                                </span>
+                                {{ form.password1 }}
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword1">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <!-- Barre de force du mot de passe -->
+                            <div class="password-strength" id="passwordStrength"></div>
+                            
+                            <!-- Exigences du mot de passe -->
+                            <div class="password-requirements">
+                                <div class="requirement" id="length">
+                                    <i class="fas fa-circle me-1"></i>Au moins 8 caractères
+                                </div>
+                                <div class="requirement" id="uppercase">
+                                    <i class="fas fa-circle me-1"></i>Une lettre majuscule
+                                </div>
+                                <div class="requirement" id="lowercase">
+                                    <i class="fas fa-circle me-1"></i>Une lettre minuscule
+                                </div>
+                                <div class="requirement" id="numbers">
+                                    <i class="fas fa-circle me-1"></i>Un chiffre
+                                </div>
+                                <div class="requirement" id="special">
+                                    <i class="fas fa-circle me-1"></i>Un caractère spécial
+                                </div>
+                            </div>
+                            
+                            {% if form.password1.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password1.errors %}
+                                        <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Confirmation mot de passe -->
+                        <div class="mb-3">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-lock me-2"></i>{{ form.password2.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-key"></i>
+                                </span>
+                                {{ form.password2 }}
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword2">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            {% if form.password2.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password2.errors %}
+                                        <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Acceptation des conditions -->
+                        {% if form.accept_terms %}
+                        <div class="mb-3 form-check">
+                            {{ form.accept_terms }}
+                            <label class="form-check-label" for="{{ form.accept_terms.id_for_label }}">
+                                {{ form.accept_terms.label }}
+                            </label>
+                            {% if form.accept_terms.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.accept_terms.errors %}
+                                        <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Erreurs non-field -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <div><i class="fas fa-exclamation-triangle me-2"></i>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Bouton d'inscription -->
+                        <button type="submit" class="btn btn-register btn-primary w-100 mb-3">
+                            <i class="fas fa-user-plus me-2"></i>Créer mon compte
+                        </button>
+                        
+                        <!-- Liens -->
+                        <div class="text-center">
+                            <span class="text-muted">Déjà un compte ?</span>
+                            <a href="{% url 'accounts:login' %}" class="text-decoration-none ms-1">
+                                <i class="fas fa-sign-in-alt me-1"></i>Se connecter
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <!-- Information de sécurité -->
+                    <div class="security-info">
+                        <h6 class="fw-bold mb-2">
+                            <i class="fas fa-info-circle me-2"></i>Après l'inscription
+                        </h6>
+                        <small class="text-muted">
+                            Vous devrez configurer l'authentification à deux facteurs (2FA) lors de votre première connexion. 
+                            Cette mesure garantit la sécurité maximale de votre compte et de vos votes.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script personnalisé -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle password visibility
+            function setupPasswordToggle(toggleId, passwordId) {
+                const toggle = document.getElementById(toggleId);
+                const password = document.getElementById(passwordId);
+                
+                if (toggle && password) {
+                    toggle.addEventListener('click', function() {
+                        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                        password.setAttribute('type', type);
+                        const icon = this.querySelector('i');
+                        icon.classList.toggle('fa-eye');
+                        icon.classList.toggle('fa-eye-slash');
+                    });
+                }
+            }
+            
+            setupPasswordToggle('togglePassword1', '{{ form.password1.id_for_label }}');
+            setupPasswordToggle('togglePassword2', '{{ form.password2.id_for_label }}');
+            
+            // Password strength checker
+            const password1 = document.getElementById('{{ form.password1.id_for_label }}');
+            const strengthBar = document.getElementById('passwordStrength');
+            
+            if (password1 && strengthBar) {
+                password1.addEventListener('input', function() {
+                    const value = this.value;
+                    let score = 0;
+                    
+                    // Check requirements
+                    const requirements = {
+                        length: value.length >= 8,
+                        uppercase: /[A-Z]/.test(value),
+                        lowercase: /[a-z]/.test(value),
+                        numbers: /\d/.test(value),
+                        special: /[^A-Za-z0-9]/.test(value)
+                    };
+                    
+                    // Update requirement indicators
+                    Object.keys(requirements).forEach(req => {
+                        const element = document.getElementById(req);
+                        if (element) {
+                            if (requirements[req]) {
+                                element.classList.add('met');
+                                element.querySelector('i').className = 'fas fa-check-circle me-1';
+                                score++;
+                            } else {
+                                element.classList.remove('met');
+                                element.querySelector('i').className = 'fas fa-circle me-1';
+                            }
+                        }
+                    });
+                    
+                    // Update strength bar
+                    strengthBar.className = 'password-strength';
+                    if (score >= 5) {
+                        strengthBar.classList.add('strong');
+                    } else if (score >= 4) {
+                        strengthBar.classList.add('good');
+                    } else if (score >= 2) {
+                        strengthBar.classList.add('fair');
+                    } else if (score >= 1) {
+                        strengthBar.classList.add('weak');
+                    }
+                });
+            }
+            
+            // Form validation
+            const form = document.getElementById('registerForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Add any additional client-side validation here
+                });
+            }
+        });
+    </script>
+</body>
+</html>
